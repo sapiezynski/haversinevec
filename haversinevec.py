@@ -4,19 +4,18 @@ R = 6378137.0
 R_km = R/1000
 
 
-def haversine(points, ref, radians=False):
-    """ Calculate the great-circle distance bewteen a point or a set of points and a reference
-    on the Earth surface.
-    The ref can be a single point or a list of points that has the same length as the list
+def haversine(points_a, points_b, radians=False):
+    """ Calculate the great-circle distance bewteen points_a and points_b
+    points_a and points_b can be a single points or lists of points
     """
     if radians:
-        lat1, lon1 = split_columns(points)
-        lat2, lon2 = split_columns(ref)
+        lat1, lon1 = split_columns(points_a)
+        lat2, lon2 = split_columns(points_b)
 
     else:
     # convert all latitudes/longitudes from decimal degrees to radians
-        lat1, lon1 = split_columns(np.radians(points))
-        lat2, lon2 = split_columns(np.radians(ref))
+        lat1, lon1 = split_columns(np.radians(points_a))
+        lat2, lon2 = split_columns(np.radians(points_b))
 
     # calculate haversine
     lat = lat2 - lat1
@@ -41,8 +40,33 @@ def haversine_pdist(points, radians = False):
         vec_idx += temp.shape[0]
     return result
 
+
+def haversine_cdist(points_a, points_b, radians = False):
+    """ Calculate the great-circle distance bewteen each combination of points in two lists
+    """
+    if not radians:
+        points_a = np.radians(points_a)
+        points_b = np.radians(points_b)
+    
+    if points_a.ndim == 1:
+        m = 1
+    else:
+        m = points_a.shape[0]
+
+    if points_b.ndim == 1:
+        n = 1
+    else:
+        n = points_b.shape[0]
+    
+    result = np.zeros((m, n), dtype=np.float64)
+    for idx in range(0, points_a.shape[0]):
+        result[idx,:] = haversine(points_a[idx], points_b, radians=True)
+    return result
+
 def split_columns(array):
-    if len(array.shape) == 1:
+    if array.ndim == 1:
         return array[0], array[1] # just a single row
     else:
         return array[:,0], array[:,1]
+
+
