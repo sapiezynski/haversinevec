@@ -43,7 +43,7 @@ def haversine_pdist(points, radians = False):
     return result
 
 
-def haversine_cdist(points_a, points_b, radians = False):
+def haversine_cdist(points_a, points_b, radians=False):
     """ 
     Calculate the great-circle distance bewteen each combination of points in two lists
     """
