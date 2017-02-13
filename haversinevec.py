@@ -66,10 +66,59 @@ def haversine_cdist(points_a, points_b, radians=False):
         result[idx,:] = haversine(points_a[idx], points_b, radians=True)
     return result
 
+
+from multiprocessing import Pool
+import itertools
+
+def haversine_cdist_parallel(points_a, points_b, radians=False, n_jobs=8):
+    """ 
+    Calculate the great-circle distance bewteen each combination of points in two lists
+    """
+    if not radians:
+        points_a = np.radians(points_a)
+        points_b = np.radians(points_b)
+    
+    if points_a.ndim == 1:
+        m = 1
+    else:
+        m = points_a.shape[0]
+
+    if points_b.ndim == 1:
+        n = 1
+    else:
+        n = points_b.shape[0]
+    
+    result = np.zeros((m, n), dtype=np.float64)
+    pool = Pool(n_jobs)
+    prev_pointer = 0
+    for idx, res in enumerate(pool.map(
+            _haversine_cdist_star, 
+            itertools.izip(_slice_array(points_a, n_jobs), 
+            itertools.repeat(points_b), 
+            itertools.repeat(True)))):
+        result[prev_pointer:prev_pointer+res.shape[0],:] = res
+        prev_pointer+=res.shape[0]
+        continue
+    pool.close()
+    pool.join()
+
+
+    # for idx in range(0, points_a.shape[0]):
+    #     result[idx,:] = haversine(points_a[idx], points_b, radians=True)
+    return result
+
+def _slice_array(array, n_jobs):
+    slice_len = int(np.ceil(array.shape[0]/float(n_jobs)))
+    return (array[idx*slice_len:(idx+1)*slice_len] for idx in range(0, n_jobs))
+
+def _haversine_cdist_star(arg):
+    return haversine_cdist(*arg)
+
 def _split_columns(array):
     if array.ndim == 1:
         return array[0], array[1] # just a single row
     else:
         return array[:,0], array[:,1]
+
 
 
